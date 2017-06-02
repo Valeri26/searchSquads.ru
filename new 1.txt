@@ -1,0 +1,44 @@
+WARRIORS
+select
+id, first_name ,second_name,third_name,
+date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
+(select name from warriorranks where id=rank_id) as rank,
+militaryUnit_name, 
+(select concat(name,',',address) from warriormilitarycommissariats where id=militarycommissariats_id) as wmc,
+(select concat(name,' ',year(begin_date),'-',year(end_date)) from wars where war_id=war_id) as war,
+concat((select name from leavingreasons where id=leavingreason_id),';',
+date_format(leavingreason_date,(select description from dateformats where id=leavingReasonDateFormat_id)),';',
+leavingReason_description) as lr
+from warriors where id = 1;
+
+FINDINGS
+select
+(select concat(name,',',location) from searchsquads where id=searchsquad_id) as searchsquads,
+date_format(finding_date,(select description from dateformats where id=findingDateFormat_id)) as fdate,
+location, findingdescription, locationdescription
+from warriors where id = 1;
+
+
+BURIALS
+select
+id, location,
+(select concat (name,','location) from burialmilitarycommissariats where id=commissariat_id) as bmc
+from burials
+
+USERS
+select
+id, login, password
+from users
+
+WARRIORLINIKS
+select
+id, name, address,
+(select id from warriors where id=warrior_id) as warrior_id
+from warriorlinks
+
+
+RELATIVES
+select 
+first_name, second_name, third_name, address
+from relatives 
+where relative_id in (select relative_id from warrior2relative where warrior_id = 1)

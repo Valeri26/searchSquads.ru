@@ -28,9 +28,13 @@ if (isset($_POST['txtLogin']) && isset($_POST['txtPassword'])) {
 			 
 			
 	 }
+	 header("Location: index.php");
+	 die();
 } 
 else if (isset($_POST['btnSignOut'])) {
 	 signOut();
+	 header("Location: index.php");
+	 die();
 }
 
 
@@ -106,8 +110,7 @@ function signOut() {
 		}
 	}
 	
-	function handleServerResponse()
-	{
+	function handleServerResponse(){
 		if (xmlHttp.readyState == 4)
 		{
 			if (xmlHttp.status == 200)
@@ -117,13 +120,9 @@ function signOut() {
 				
 				warriors = xmlRoot.getElementsByTagName("warrior");
 				
+				var htmlCode = "<table id='tblFastSearch' style='border: 1px solid black;  border-collapse: collapse; width: 100%;'>";
 				
-				
-				
-				
-				var htmlCode = "<table style='border: 1px solid black;  border-collapse: collapse; width: 100%;'>";
-				
-				htmlCode += "<tr><th style='border: 1px solid black;'>Фамилия</th><th style='border: 1px solid black;'>Имя</th><th style='border: 1px solid black;'>Отчество</th><th style='border: 1px solid black;'>Дата рождения</th><th style='border: 1px solid black;'>Звание</th></tr>";
+				htmlCode += "<tr><th style='border: 1px solid black;'>ИД</th><th style='border: 1px solid black;'>Фамилия</th><th style='border: 1px solid black;'>Имя</th><th style='border: 1px solid black;'>Отчество</th><th style='border: 1px solid black;'>Дата рождения</th><th style='border: 1px solid black;'>Звание</th></tr>";
 				
 				for( var i = 0; i < warriors.length; i++) {
 					htmlCode += "<tr>";
@@ -142,28 +141,65 @@ function signOut() {
 				
 				 var element = document.getElementById("mContent");
 				 element.innerHTML = htmlCode;
+				 
+				var tbl = document.getElementById("tblFastSearch");				
+				var rows = tbl.getElementsByTagName("tr");
+				for (i = 1; i < rows.length; i++) {
+					
+					var currentRow = rows.item(i);
+					var createClickHandler = 
+						function(row) 
+						{
+							return function() { 
+													var cell = row.getElementsByTagName('td')[0];
+													var id = cell.innerHTML;
+													GetWarrior(id);														
+											 };
+						};
+
+					currentRow.onclick = createClickHandler(currentRow);
+				}
+				
 			}
 		}
 	}
 	
-	function addRowHandlers() {
-		var table = document.getElementById("tableId");
-		var rows = table.getElementsByTagName("tr");
-		for (i = 0; i < rows.length; i++) {
-			var currentRow = table.rows[i];
-			var createClickHandler = 
-				function(row) 
-				{
-					return function() { 
-											var cell = row.getElementsByTagName("td")[0];
-											var id = cell.innerHTML;
-											alert("id:" + id);
-									 };
-				};
-
-			currentRow.onclick = createClickHandler(currentRow);
+	function GetWarrior(id) {		
+		if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
+			xmlHttp.open("GET", "GetWarrior.php?warriorId="+id, true);
+			xmlHttp.onreadystatechange = handleGetWarrior;
+			xmlHttp.send(null);	
 		}
-	}	
+	}
+	
+	function handleGetWarrior() {
+		if (xmlHttp.readyState == 4)
+		{
+			if (xmlHttp.status == 200)
+			{
+				xmlResponse = xmlHttp.responseXML;	
+				xmlRoot = xmlResponse.documentElement;
+				
+				var warrior = xmlRoot.getElementsByTagName("warrior")[0];
+				
+				
+				//var id = warrior.getElementsByTagName("id")[0].innerHTML;
+				var html = '';
+				
+				var children = warrior.childNodes;
+				for(var i = 0; i < children.length; i++) {
+						html += "<br/>" + children.item(i).innerHTML;
+				}
+				
+				var element = document.getElementById("mContent");
+				element.innerHTML = html;
+				
+			}
+		}
+	}
+	
+	
+	
 </script>
 
 </head>
@@ -232,14 +268,16 @@ function signOut() {
             <li><a href="http://rf-poisk.ru/region/47/reestr/" title="Link">Поисковые отряды/объединения</a></li>
             <li class="notimp"><!-- notimp class is applied to remove this link from the tablet and phone views --><a href="#"  title="Link">Расширенный поиск</a></li>
             <li><a href="#" title="Link">Внести данные</a></li>
-            <li><a href="#" title="Link">Обратная связь</a></li>
+            <li><a href="#" title="Link">Контакты</a></li>
           </ul>
         </nav>
       </div>
     </section>
     <section class="mainContent">
 
+	
 	<div id="mContent">
+	
 	
 	</div>
 	

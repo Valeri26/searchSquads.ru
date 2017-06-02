@@ -18,7 +18,7 @@
 	
 	$searchRow = $_GET["searchRow"];
 	
-	$query = "select first_name,second_name,third_name,date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
+	$query = "select id, first_name ,second_name,third_name,date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
 	(select name from warriorranks where id=rank_id) as rank from warriors where concat(first_name,' ',second_name,' ', third_name)=?;";
 	
 	$stmt = $db->prepare($query);
@@ -29,6 +29,7 @@
 	$result = $stmt->get_result();
 	while ($row = $result->fetch_assoc()) {
 			echo "<warrior>";
+			echo "<id>" . $row["id"] . "</id>";
 			echo "<first_name>" . $row["first_name"] . "</first_name>";
 			echo "<second_name>" . $row["second_name"] . "</second_name>";
 			echo "<third_name>" . $row["third_name"] . "</third_name>";
