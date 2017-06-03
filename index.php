@@ -5,6 +5,7 @@ $user='root';
 $password='';
 $dbname='search_squad_results';
 $db=mysqli_connect($host,$user,$password,$dbname);
+mysqli_set_charset($db, "utf8");
 if ($db->connect_errno) {
 	exit;
 }
@@ -18,7 +19,7 @@ if (isset($_POST['txtLogin']) && isset($_POST['txtPassword'])) {
 	 $password=$_POST['txtPassword'];
 	 
 	 $query="select * from users where login='$login' and password=md5('$password') LIMIT 1;";
-	 $res=$db->query($query) ;
+	 $res=$db->query($query);
 	 
 	 if ($res->num_rows == 1) {
 			 $row=$res->fetch_assoc();
@@ -110,6 +111,48 @@ function signOut() {
 		}
 	}
 	
+	function ExtendSearch() {			
+		var url = "extendSearch.php";
+		var params = [];
+		
+		var first_name = encodeURIComponent(document.getElementById("first_name").value);	
+		var second_name = encodeURIComponent(document.getElementById("second_name").value);
+		var third_name = encodeURIComponent(document.getElementById("third_name").value);
+		var bdate = encodeURIComponent(document.getElementById("bdate").value);
+		var rankId = encodeURIComponent(document.getElementById("rankId").value);
+		var mun = encodeURIComponent(document.getElementById("mun").value);
+		var wmc = encodeURIComponent(document.getElementById("wmc").value);
+		var finding = encodeURIComponent(document.getElementById("finding").value);
+
+		if (first_name.length > 0) {
+			params.push("first_name="+first_name);
+		}
+		
+		// params[0] = "first_name=" + first_name;
+		// params[1] = "second_name=" + second_name;
+		// params[2] = "third_name=" + third_name;
+		// params[3] = "bdate=" + bdate;
+		// params[4] = "rankId=" + rankId;
+		// params[5] = "mun=" + mun;
+		// params[6] = "wmc=" + wmc;
+		// params[7] = "finding=" + finding;
+		
+		var sParams = params.reduce(
+			 function(acc, curv, curidx) {
+			 if (curidx == 0) return acc+curv;
+			 return acc + "&" + curv; 
+			 }, "?");	
+		
+		var element = document.getElementById("mContent");
+		element.innerHTML = sParams;
+		
+		// if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
+			// xmlHttp.open("GET", url+"?"+sParams, true);
+			// xmlHttp.onreadystatechange = handleServerResponse;
+			// xmlHttp.send(null);	
+		// }
+	}
+	
 	function handleServerResponse(){
 		if (xmlHttp.readyState == 4)
 		{
@@ -120,9 +163,9 @@ function signOut() {
 				
 				warriors = xmlRoot.getElementsByTagName("warrior");
 				
-				var htmlCode = "<table id='tblFastSearch' style='border: 1px solid black;  border-collapse: collapse; width: 100%;'>";
+				var htmlCode = "<link rel='stylesheet' type='text/css' href='styles.css'> <center> <table id='tblFastSearch'>";
 				
-				htmlCode += "<tr><th style='border: 1px solid black;'>ИД</th><th style='border: 1px solid black;'>Фамилия</th><th style='border: 1px solid black;'>Имя</th><th style='border: 1px solid black;'>Отчество</th><th style='border: 1px solid black;'>Дата рождения</th><th style='border: 1px solid black;'>Звание</th></tr>";
+				htmlCode += "<tr><th>ИД</th><th>Фамилия</th><th>Имя</th><th>Отчество</th><th>Дата рождения</th><th>Звание</th></tr>";
 				
 				for( var i = 0; i < warriors.length; i++) {
 					htmlCode += "<tr>";
@@ -130,14 +173,14 @@ function signOut() {
 					var children = warriors.item(i).childNodes;
 					
 					for( var j = 0; j < children.length; j++) {
-						htmlCode += "<td style='border: 1px solid black;'>";	
+						htmlCode += "<td>";	
 						htmlCode += children.item(j).innerHTML;
 						htmlCode += "</td>";
 					}
 					htmlCode += "</tr>";
 				}
 				
-				htmlCode += "</table>"
+				htmlCode += "</table> </center>"
 				
 				 var element = document.getElementById("mContent");
 				 element.innerHTML = htmlCode;
@@ -157,7 +200,7 @@ function signOut() {
 											 };
 						};
 
-					currentRow.onclick = createClickHandler(currentRow);
+					currentRow.ondblclick = createClickHandler(currentRow);
 				}
 				
 			}
@@ -263,12 +306,12 @@ function signOut() {
           <hr>
           <ul>
             <!-- List of links under menuset 1 -->
-            <li><a href="#" title="Link">О проекте</a></li>
+            <li><a href="index.php?aboutproject" title="Link">О проекте</a></li>
             <li><a href="http://lenww2.ru/" title="Link">Мемориалы</a></li>
             <li><a href="http://rf-poisk.ru/region/47/reestr/" title="Link">Поисковые отряды/объединения</a></li>
-            <li class="notimp"><!-- notimp class is applied to remove this link from the tablet and phone views --><a href="#"  title="Link">Расширенный поиск</a></li>
+            <li class="notimp"><!-- notimp class is applied to remove this link from the tablet and phone views --><a href="index.php"  title="Link">Расширенный поиск</a></li>
             <li><a href="#" title="Link">Внести данные</a></li>
-            <li><a href="#" title="Link">Контакты</a></li>
+            <li><a href="index.php?contacts" title="Link">Контакты</a></li>
           </ul>
         </nav>
       </div>
@@ -277,8 +320,20 @@ function signOut() {
 
 	
 	<div id="mContent">
+	<?php
 	
-	
+		
+		if(isset($_GET['aboutproject'])) {
+			include('aboutproject.tpl');
+		} 
+		else if(isset($_GET['contacts'])) {
+			include('contacts.tpl');
+		}
+		else {
+			include('extendSearch.tpl');
+		}
+		
+	?>
 	</div>
 	
     </section>
