@@ -127,30 +127,42 @@ function signOut() {
 		if (first_name.length > 0) {
 			params.push("first_name="+first_name);
 		}
-		
-		// params[0] = "first_name=" + first_name;
-		// params[1] = "second_name=" + second_name;
-		// params[2] = "third_name=" + third_name;
-		// params[3] = "bdate=" + bdate;
-		// params[4] = "rankId=" + rankId;
-		// params[5] = "mun=" + mun;
-		// params[6] = "wmc=" + wmc;
-		// params[7] = "finding=" + finding;
+		if (second_name.length > 0) {
+			params.push("second_name="+second_name);
+		}
+		if (third_name.length > 0) {
+			params.push("third_name="+third_name);
+		}
+		if (bdate.length > 0) {
+			params.push("bdate="+bdate);
+		}
+		if (rankId.length > 0) {
+			params.push("rankId="+rankId);
+		}
+		if (mun.length > 0) {
+			params.push("mun="+mun);
+		}
+		if (wmc.length > 0) {
+			params.push("wmc="+wmc);
+		}
+		if (finding.length > 0) {
+			params.push("finding="+finding);
+		}		
 		
 		var sParams = params.reduce(
 			 function(acc, curv, curidx) {
 			 if (curidx == 0) return acc+curv;
 			 return acc + "&" + curv; 
-			 }, "?");	
+			 }, "");	
 		
-		var element = document.getElementById("mContent");
-		element.innerHTML = sParams;
-		
-		// if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
-			// xmlHttp.open("GET", url+"?"+sParams, true);
-			// xmlHttp.onreadystatechange = handleServerResponse;
-			// xmlHttp.send(null);	
-		// }
+		 // var element = document.getElementById("mContent");
+		 // element.innerHTML = url+"?"+sParams;
+		// return ;
+		if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
+			xmlHttp.open("GET", url+"?"+sParams, true);
+			xmlHttp.onreadystatechange = handleServerResponse;
+			xmlHttp.send(null);	
+		}
 	}
 	
 	function handleServerResponse(){
@@ -195,7 +207,7 @@ function signOut() {
 						{
 							return function() { 
 													var cell = row.getElementsByTagName('td')[0];
-													var id = cell.innerHTML;
+													var id = cell.innerHTML;													
 													GetWarrior(id);														
 											 };
 						};
@@ -223,25 +235,40 @@ function signOut() {
 				xmlResponse = xmlHttp.responseXML;	
 				xmlRoot = xmlResponse.documentElement;
 				
-				var warrior = xmlRoot.getElementsByTagName("warrior")[0];
+				// var warrior = xmlRoot.getElementsByTagName("warrior")[0];
 				
 				
-				//var id = warrior.getElementsByTagName("id")[0].innerHTML;
-				var html = '';
+				// //var id = warrior.getElementsByTagName("id")[0].innerHTML;
+				// var html = '';
 				
-				var children = warrior.childNodes;
-				for(var i = 0; i < children.length; i++) {
-						html += "<br/>" + children.item(i).innerHTML;
-				}
+				// var children = warrior.childNodes;
+				// for(var i = 0; i < children.length; i++) {
+						// html += "<br/>" + children.item(i).innerHTML;
+				// }
 				
-				var element = document.getElementById("mContent");
-				element.innerHTML = html;
-				
+				// var element = document.getElementById("mContent");
+				// element.innerHTML = html;				
 			}
 		}
 	}
 	
+	var lg = <?php if (islogin()) print "true"; else print "false"; ?>;
 	
+	function CreateWarriorForm() {
+			var html = "<input type='text' value='first_name' 	readonly>";
+			if (lg) {
+					html += "<input type='text' value='bdate' >";
+					
+					// Обращение к БД, заполнение элементов
+			} else {
+					html += "<input type='text' value='age' 			readonly>";	
+					
+					// Карточка война
+			}
+			
+			var element = document.getElementById("mContent");
+			element.innerHTML = html;
+	}
 	
 </script>
 
@@ -273,7 +300,7 @@ function signOut() {
 	 {
 		print "<form action='' method='POST'>";
 		print '<input type="text" name="txtLogin" placeholder="Логин">';
-		print '<input type="text"  name="txtPassword" placeholder="Пароль">';
+		print '<input type="password"  name="txtPassword" placeholder="Пароль">';
 		print '<input type="submit" name="btnSignIn" id="button" value="Войти">';
 		print '</form>';
 	 }
@@ -310,7 +337,7 @@ function signOut() {
             <li><a href="http://lenww2.ru/" title="Link">Мемориалы</a></li>
             <li><a href="http://rf-poisk.ru/region/47/reestr/" title="Link">Поисковые отряды/объединения</a></li>
             <li class="notimp"><!-- notimp class is applied to remove this link from the tablet and phone views --><a href="index.php"  title="Link">Расширенный поиск</a></li>
-            <li><a href="#" title="Link">Внести данные</a></li>
+            <li><a href="#" onclick="CreateWarriorForm();" title="Link">Внести данные</a></li>
             <li><a href="index.php?contacts" title="Link">Контакты</a></li>
           </ul>
         </nav>
