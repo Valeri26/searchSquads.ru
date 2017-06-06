@@ -207,9 +207,10 @@ function signOut() {
 						{
 							return function() { 
 													var cell = row.getElementsByTagName('td')[0];
-													var id = cell.innerHTML;													
-													GetWarrior(id);														
-											 };
+													var id = cell.innerHTML;
+
+													OpenWarriorCard(id);																
+											};
 						};
 
 					currentRow.ondblclick = createClickHandler(currentRow);
@@ -219,56 +220,16 @@ function signOut() {
 		}
 	}
 	
-	function GetWarrior(id) {		
-		if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
-			xmlHttp.open("GET", "GetWarrior.php?warriorId="+id, true);
-			xmlHttp.onreadystatechange = handleGetWarrior;
-			xmlHttp.send(null);	
-		}
+	function OpenWarriorCard(id) {
+		
+		var html = 
+			"<form id='dynForm' method='GET'> <input name='warriorId' type='hidden' value='" + id + "'></form>";
+		
+		document.body.innerHTML += html;
+		
+		document.getElementById('dynForm').submit();		
 	}
 	
-	function handleGetWarrior() {
-		if (xmlHttp.readyState == 4)
-		{
-			if (xmlHttp.status == 200)
-			{
-				xmlResponse = xmlHttp.responseXML;	
-				xmlRoot = xmlResponse.documentElement;
-				
-				// var warrior = xmlRoot.getElementsByTagName("warrior")[0];
-				
-				
-				// //var id = warrior.getElementsByTagName("id")[0].innerHTML;
-				// var html = '';
-				
-				// var children = warrior.childNodes;
-				// for(var i = 0; i < children.length; i++) {
-						// html += "<br/>" + children.item(i).innerHTML;
-				// }
-				
-				// var element = document.getElementById("mContent");
-				// element.innerHTML = html;				
-			}
-		}
-	}
-	
-	var lg = <?php if (islogin()) print "true"; else print "false"; ?>;
-	
-	function CreateWarriorForm() {
-			var html = "<input type='text' value='first_name' 	readonly>";
-			if (lg) {
-					html += "<input type='text' value='bdate' >";
-					
-					// Обращение к БД, заполнение элементов
-			} else {
-					html += "<input type='text' value='age' 			readonly>";	
-					
-					// Карточка война
-			}
-			
-			var element = document.getElementById("mContent");
-			element.innerHTML = html;
-	}
 	
 </script>
 
@@ -337,7 +298,13 @@ function signOut() {
             <li><a href="http://lenww2.ru/" title="Link">Мемориалы</a></li>
             <li><a href="http://rf-poisk.ru/region/47/reestr/" title="Link">Поисковые отряды/объединения</a></li>
             <li class="notimp"><!-- notimp class is applied to remove this link from the tablet and phone views --><a href="index.php"  title="Link">Расширенный поиск</a></li>
-            <li><a href="#" onclick="CreateWarriorForm();" title="Link">Внести данные</a></li>
+			
+			<?php
+				if (islogin()) {
+				print "<li><a href='index.php?warriorId=-1' title='Link'>Внести данные</a></li>";
+				}
+			?>
+			
             <li><a href="index.php?contacts" title="Link">Контакты</a></li>
           </ul>
         </nav>
@@ -355,6 +322,75 @@ function signOut() {
 		} 
 		else if(isset($_GET['contacts'])) {
 			include('contacts.tpl');
+		}
+		else if (isset($_GET['warriorId'])) {
+			$warriorId = (int) $_GET['warriorId'];
+			$isLoggedIn = islogin();
+			
+			if ($warriorId == 0 || $warriorId < -1) {				
+				exit('Ошибка!');
+			}
+			
+			if ($warriorId == -1 && !$isLoggedIn) {
+				exit("У вас недостаточно прав");
+			}
+			
+			
+			$first_name = "Андреев";
+			$second_name = "Алексей";
+			$third_name = "Иванович";
+			$bdate = "1901";
+			$rank = "рядовой";
+			$militaryUnit_name = "ВЧ ХХХ";
+			
+			$readonly = 'readonly';
+			if ($isLoggedIn) $readonly = '';
+			print "<link rel='stylesheet' type='text/css' href='styles.css'>";
+			print "<center><form id='frmWarriorCard'> <table id='tblWarriorCard'>";
+			
+			print "<input id='warriorId' type='hidden' value='$warriorId' readonly>";
+				   
+			print "<tr>
+				   <td> <label for='first_name'>Фамилия:</label> </td>
+				   <td> <input id='first_name' type='text' value='$first_name' $readonly> </td>
+				   </tr>";
+			
+			print "<tr>
+				   <td> <label for='second_name'>Имя:</label> </td>
+				   <td> <input id='second_name' type='text' value='$second_name' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='third_name'>Отчество:</label> </td>
+				   <td> <input id='third_name' type='text' value='$third_name' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='bdate'>Год рождения:</label> </td>
+				   <td> <input id='bdate' type='text' value='$bdate' $readonly> </td>
+				   </tr>";
+			
+			print "<tr>
+				   <td> <label for='rank'>Звание:</label> </td> <td>";
+				   
+			if ($isLoggedIn) {
+				print "<select>";
+					print "<option selected> $rank </option>";
+					print "<option> One </option>";
+					print "<option> Two </option>";
+				print "</select>";
+			} else {
+				print "<input id='rank' type='text' value='$rank' $readonly>";
+			}
+			
+			print "</td></tr>";
+
+			print "<tr>
+				   <td> <label for='militaryUnit_name'>Воинская часть:</label> </td>
+				   <td> <input id='militaryUnit_name' type='text' value='$militaryUnit_name' $readonly> </td>
+				   </tr>";
+			
+			print "</table> </form> </center>";
 		}
 		else {
 			include('extendSearch.tpl');
