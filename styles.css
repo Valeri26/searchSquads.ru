@@ -43,7 +43,10 @@
 		width: 80%;
 	}
 	
-	#tblFastSearch tr td:first-child, th:first-child {
+	#tblFastSearch tr td:first-child{
+		visibility: hidden;
+	}
+	#tblFastSearch tr th:first-child {
 		visibility: hidden;
 	}
 	
@@ -53,7 +56,13 @@
 	
 	
 	#tblWarriorCard{
-		width: 80%;		
+		width: 80%;
+
+		//border: 1px solid black;
+	}
+	
+	#tblWarriorCard td {
+		//border: 1px solid black;
 	}
 	
 	#tblWarriorCard tr {
@@ -73,6 +82,21 @@
 		text-align: left;
 		width: 40%;
 	}
+	
+	#tblRelative {
+		width: 100%;
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+	#tblRelative tr th:first-child {
+		width: 1px;
+		visibility: hidden;
+	}
+	#tblRelative tr td:first-child {
+		width: 1px;
+		visibility: hidden;
+	}
+	
 	
 	
 	

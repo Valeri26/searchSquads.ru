@@ -335,21 +335,82 @@ function signOut() {
 				exit("У вас недостаточно прав");
 			}
 			
+			$first_name = "";
+			$second_name = "";
+			$third_name = "";
+			$bdate = "";
+			$rank = "";
+			$militaryUnit_name = "";
+			$wmc = "";
+			$war = "";
+			$leavingreason = "";
+			$leavingreasondate = "";
+			$leavingreasondescription = "";
+			$relatives = "";
+			$searchsquad = "";
+			$findingdate = "";
+			$location = "";
+			$locationdescription = "";
+			$findingdescription = "";
+			$location = "";
+			$burial_date = "";
+			$commissariat_id = "";
+
 			
-			$first_name = "Андреев";
-			$second_name = "Алексей";
-			$third_name = "Иванович";
-			$bdate = "1901";
-			$rank = "рядовой";
-			$militaryUnit_name = "ВЧ ХХХ";
+			if ($warriorId > 0)  {
+				$query = "select
+	id, first_name ,second_name,third_name,
+	date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
+	(select name from warriorranks where id=rank_id) as rank,
+	militaryUnit_name, 
+	(select concat(name,',',address) from warriormilitarycommissariats where id=militarycommissariats_id) as wmc,
+	(select concat(name,' ',year(begin_date),'-',year(end_date)) from wars where war_id=war_id) as war,
+	concat((select name from leavingreasons where id=leavingreason_id),';',
+	date_format(leavingreason_date,(select description from dateformats where id=leavingReasonDateFormat_id)),';',
+	leavingReason_description) as lr
+	from warriors where id = ?;";
+
+				$stmt = $db->prepare($query);
+				$stmt->bind_param("i",$warriorId);		
+				$stmt->execute();
+				
+				$row = $stmt->get_result()->fetch_assoc();
+					
+					
+				$first_name	= $row['first_name'];
+				$second_name = $row['second_name'];
+				
+				$stmt->close();
+				
+				
+				//
+				$query = "";
+				$stmt = $db->prepare($query);
+				$stmt->bind_param("i",$warriorId);		
+				$stmt->execute();				
+				$row = $stmt->get_result()->fetch_assoc();
+				
+				$first_name	= $row['first_name'];
+				$second_name = $row['second_name'];
+				
+				$stmt->close();
+				
+				
+				
+				
+			}
+			
+			
 			
 			$readonly = 'readonly';
 			if ($isLoggedIn) $readonly = '';
 			print "<link rel='stylesheet' type='text/css' href='styles.css'>";
 			print "<center><form id='frmWarriorCard'> <table id='tblWarriorCard'>";
 			
+			
+			
 			print "<input id='warriorId' type='hidden' value='$warriorId' readonly>";
-				   
+			print "<tr> <td colspan=2> <p align='center'> Данные о бойце </p> </td> </tr>";	   
 			print "<tr>
 				   <td> <label for='first_name'>Фамилия:</label> </td>
 				   <td> <input id='first_name' type='text' value='$first_name' $readonly> </td>
@@ -371,8 +432,7 @@ function signOut() {
 				   </tr>";
 			
 			print "<tr>
-				   <td> <label for='rank'>Звание:</label> </td> <td>";
-				   
+				   <td> <label for='rank'>Звание:</label> </td> <td>";				   
 			if ($isLoggedIn) {
 				print "<select>";
 					print "<option selected> $rank </option>";
@@ -381,8 +441,7 @@ function signOut() {
 				print "</select>";
 			} else {
 				print "<input id='rank' type='text' value='$rank' $readonly>";
-			}
-			
+			}			
 			print "</td></tr>";
 
 			print "<tr>
@@ -390,7 +449,170 @@ function signOut() {
 				   <td> <input id='militaryUnit_name' type='text' value='$militaryUnit_name' $readonly> </td>
 				   </tr>";
 			
+			/* РВК */
+			print "<tr>
+				   <td> <label for='wmc'>Каким РВК призван:</label> </td> <td>";				   
+			if ($isLoggedIn) {
+				print "<select>";
+					print "<option selected disabled> --Выберите РВК-- </option>";
+					print "<option> Новый РВК </option>";
+					print "<option> РВК1 </option>";
+					print "<option> РВК2 </option>";
+				print "</select>";
+			} else {
+				print "<input id='wmc' type='text' value='$wmc' readonly>";
+			}			
+			print "</td></tr>";
+			
+			if ($isLoggedIn) {
+				print "<tr>
+					   <td> <label for='wmc_name'>Название РВК:</label> </td>
+					   <td> <input id='wmc_name' type='text' value='' $readonly> </td>
+					   </tr>";
+				print "<tr>
+					   <td> <label for='wmc_address'>Адрес РВК:</label> </td>
+					   <td> <input id='wmc_address' type='text' value='' $readonly> </td>
+					   </tr>";
+			}
+			/* Война */
+			print "<tr class='first_tr'>
+				   <td> <label for='war'>Война:</label> </td> <td>";				   
+			if ($isLoggedIn) {
+				print "<select>";
+					print "<option selected> $war </option>";
+					print "<option> war1 </option>";
+					print "<option> war2 </option>";
+				print "</select>";
+			} else {
+				print "<input id='war' type='text' value='$war' readonly>";
+			}			
+			print "</td></tr>";
+			   
+			/* Причина выбытия */
+			print "<tr>
+				   <td> <label for='leavingreason'>Причина выбытия:</label> </td> <td>";				   
+			if ($isLoggedIn) {
+				print "<select>";
+					print "<option selected> $leavingreason </option>";
+					print "<option> war1 </option>";
+					print "<option> war2 </option>";
+				print "</select>";
+			} else {
+				print "<input id='leavingreason' type='text' value='$leavingreason' readonly>";
+			}	
+			print "</td></tr>";
+			
+			print "<tr>
+				   <td> <label for='leavingreasondate'>Дата выбытия:</label> </td>
+				   <td> <input id='leavingreasondate' type='text' value='$leavingreasondate' $readonly> </td>
+				   </tr>";
+			print "<tr>
+				   <td> <label for='leavingreasondescription'>Описание выбытия:</label> </td>
+				   <td> <input id='leavingreasondescription' type='text' value='$leavingreasondescription' $readonly> </td>
+				   </tr>";	   
+				   
+				
+			print "<tr> <td colspan=2> <p align='center'> Сведения о родственниках</p> </td> </tr>
+				   
+				   <tr>
+				   <td colspan=2> 
+						<center>
+						<table id=tblRelative>
+						<tr> <th> ИД </th> <th> ФИО </th> <th> Адрес </th> </tr>";
+						
+					
+					//<tr> <td> RelativeName </td> <td> RelativeAddress </td> </tr>
+			if ($isLoggedIn) {
+				print "<tr> 
+					<td> f </td>
+					<td> <input type='text'> </td> 
+					<td> <input type='text'> </td> 
+					</tr>";
+			}
+						
+			print "		</table> </center>
+						
+				   </td>
+				   </tr>
+				   
+				   ";
+				   
+			   
+			print "<tr> <td colspan=2> <p align='center'> Поисковый отряд </p> </td> </tr>";	
+			print "<tr>
+				   <td> <label for='searchsquad'>Поисковый отряд/объединение:</label> </td> <td>";				   
+			if ($isLoggedIn) {
+				print "<select>";
+					print "<option selected disabled> --Выберите отряд-- </option>";
+					print "<option> Новый отряд </option>";
+					print "<option> Имя поискового отряда </option>";
+				print "</select>";
+			} else {
+				print "<input id='searchsquad' type='text' value='$searchsquad' readonly>";
+			}			
+			print "</td></tr>";	
+			 
+			if ($isLoggedIn) {
+				print "<tr>
+					   <td> <label for='searchsquad_name'>Название:</label> </td>
+					   <td> <input id='searchsquad_name' type='text' value='' $readonly> </td>
+					   </tr>";
+				print "<tr>
+					   <td> <label for='searchsquad_address'>Адрес:</label> </td>
+					   <td> <input id='searchsquad_address' type='text' value='' $readonly> </td>
+					   </tr>";
+			}
+			
+			print "<tr> <td colspan=2> <p align='center'> Сведения об обнаружении </p> </td> </tr>";			
+			print "<tr>
+				   <td> <label for='findingdate'>Дата:</label> </td>
+				   <td> <input id='findingdate' type='text' value='$findingdate' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='location'>Место:</label> </td>
+				   <td> <input id='location' type='text' value='$location' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='locationdescription'>Описание места:</label> </td>
+				   <td> <input id='locationdescription' type='text' value='$locationdescription' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='findingdescription'>Вид находки, по которой установлена личность:</label> </td>
+				   <td> <input id='findingdescription' type='text' value='$findingdescription' $readonly> </td>
+				   </tr>";
+				   
+			//Сведения о захоронении
+			print "<tr> <td colspan=2> <p align='center'> Сведения о захоронении </p> </td> </tr>";
+			
+			print "<tr>
+				   <td> <label for='location'>Место:</label> </td>
+				   <td> <input id='location' type='text' value='$location' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='burial_date'>Дата:</label> </td>
+				   <td> <input id='burial_date' type='text' value='$burial_date' $readonly> </td>
+				   </tr>";
+				   
+			print "<tr>
+				   <td> <label for='commissariat_id'>Наименование военкомата:</label> </td>
+				   <td> <input id='commissariat_id' type='text' value='$commissariat_id' $readonly> </td>
+				   </tr>";
+			
+			
 			print "</table> </form> </center>";
+			
+			$btnName = 'Изменить данные';
+			if ($warriorId == -1) $btnName = 'Внести данные';
+			
+			if ($isLoggedIn) {
+				print "<input type='button' value='$btnName'>";
+			}
+			
+			print "<br><br>";
 		}
 		else {
 			include('extendSearch.tpl');
