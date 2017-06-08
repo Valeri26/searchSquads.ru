@@ -339,36 +339,49 @@ function signOut() {
 			$second_name = "";
 			$third_name = "";
 			$bdate = "";
-			$rank = "";
+			
+			$rankid = "";
+			$ranks = array();
+			
 			$militaryUnit_name = "";
-			$wmc = "";
-			$war = "";
-			$leavingreason = "";
-			$leavingreasondate = "";
-			$leavingreasondescription = "";
-			$relatives = "";
-			$searchsquad = "";
+			
+			$wmcid = -1;
+			$wmcs = array([-1,"",""]);
+			
+			$warid = 0;
+			$wars = array();
+			
+			$lrid = 0;
+			$lrdate = "";
+			$lrdesc = "";
+			$lrs = array();			
+			$relatives = array();
+			
+			$searchsquadid = -1;
+			$searchsquads = array([-1,"",""]);
+			
 			$findingdate = "";
 			$location = "";
 			$locationdescription = "";
 			$findingdescription = "";
 			$location = "";
-			$burial_date = "";
+			$burialdate = "";
 			$commissariat_id = "";
-
+		
+			
 			
 			if ($warriorId > 0)  {
 				$query = "select
-	id, first_name ,second_name,third_name,
-	date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
-	(select name from warriorranks where id=rank_id) as rank,
-	militaryUnit_name, 
-	(select concat(name,',',address) from warriormilitarycommissariats where id=militarycommissariats_id) as wmc,
-	(select concat(name,' ',year(begin_date),'-',year(end_date)) from wars where war_id=war_id) as war,
-	concat((select name from leavingreasons where id=leavingreason_id),';',
-	date_format(leavingreason_date,(select description from dateformats where id=leavingReasonDateFormat_id)),';',
-	leavingReason_description) as lr
-	from warriors where id = ?;";
+				id, first_name ,second_name,third_name,
+				date_format(birth_date,(select description from dateformats where id=birthDateFormat_id)) as bdate,
+				rank_id,
+				militaryUnit_name, 
+				militarycommissariats_id,
+				war_id,
+				leavingreason_id as lrid, 
+				date_format(leavingreason_date,(select description from dateformats where id=leavingReasonDateFormat_id)) as lrdate,
+				leavingReason_description as lrdesc 				
+				from warriors where id = ?;";
 
 				$stmt = $db->prepare($query);
 				$stmt->bind_param("i",$warriorId);		
@@ -379,23 +392,130 @@ function signOut() {
 					
 				$first_name	= $row['first_name'];
 				$second_name = $row['second_name'];
+				$third_name = $row['third_name'];
+				$bdate = $row['bdate'];
+				$rankid = $row['rank_id'];
+				$militaryUnit_name = $row['militaryUnit_name'];
+				$wmcid = $row['militarycommissariats_id'];
+				$warid = $row['war_id'];
+				$lrid = $row['lrid'];
+				$lrdate = $row['lrdate'];
+				$lrdesc = $row['lrdesc'];				
 				
 				$stmt->close();
 				
+				// relatives
+				$query = "select relative_id, concat(first_name,' ',second_name,' ',third_name) name, address from relatives 
+				where relative_id in (select relative_id from warrior2relative where warrior_id = ?);";
 				
-				//
-				$query = "";
 				$stmt = $db->prepare($query);
 				$stmt->bind_param("i",$warriorId);		
-				$stmt->execute();				
-				$row = $stmt->get_result()->fetch_assoc();
+				$stmt->execute();	
 				
-				$first_name	= $row['first_name'];
-				$second_name = $row['second_name'];
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($relatives, [$row['relative_id'], $row['name'], $row['address']]); 
+				}
 				
 				$stmt->close();
 				
+				//
+				$query = "select
+				searchsquad_id,
+				date_format(findingdate,(select description from dateformats where id=findingDateFormat_id)) as fdate,
+				location, findingdescription, locationdescription
+				from findings where warrior_id = ?;";
 				
+				$stmt = $db->prepare($query);
+				$stmt->bind_param("i",$warriorId);		
+				$stmt->execute();	
+				
+				$row = $stmt->get_result()->fetch_assoc();
+				
+				$searchsquadid = $row['searchsquad_id'];
+				$findingdate = $row['fdate'];
+				$location = $row['location'];
+				$locationdescription = $row['locationdescription'];
+				$findingdescription = $row['findingdescription'];
+				
+				$stmt->close();
+				
+				//
+				$query = "select
+				location, date_format(burialdate, '%d-%m-%Y') burialdate,
+				(select concat (name,',',location) from burialmilitarycommissariats where id=commissariat_id) as bmc
+				from burials where warrior_id = ?;";
+				
+				$stmt = $db->prepare($query);
+				$stmt->bind_param("i",$warriorId);		
+				$stmt->execute();	
+				
+				$row = $stmt->get_result()->fetch_assoc();
+				
+				$location = $row['location'];
+				$burialdate = $row['burialdate'];
+				$location = $row['location'];
+				$commissariat_id = $row['bmc'];
+				
+				$stmt->close();
+				
+			}
+			
+			if ($warriorId == -1 || $warriorId > 0){
+					// getleaving reasons				
+				$query = "select id, name from leavingreasons order by id;";
+				$stmt = $db->prepare($query);
+				$stmt->execute();
+				
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($lrs, [$row['id'], $row['name']]);
+				}
+				$stmt->close();
+			
+				// get ranks
+				$query = "select id, name from warriorranks order by id;";
+				$stmt = $db->prepare($query);
+				$stmt->execute();
+				
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($ranks, [$row['id'], $row['name']]);
+				}
+				$stmt->close();
+				
+				//get warrior military commissariats;
+				$query = "select id,name,address from warriormilitarycommissariats order by name;";
+				$stmt = $db->prepare($query);
+				$stmt->execute();
+				
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($wmcs, [$row['id'], $row['name'], $row['address']]);
+				}
+				$stmt->close();
+				
+				//get wars;
+				$query = "select war_id id, concat(name,' (',YEAR(begin_date),'-',YEAR(end_date),')') name from wars order by war_id;";
+				$stmt = $db->prepare($query);
+				$stmt->execute();
+				
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($wars, [$row['id'], $row['name']]);
+				}
+				$stmt->close();
+				
+				// get search squads
+				$query = "select id,name,location from searchsquads order by name;";
+				$stmt = $db->prepare($query);
+				$stmt->execute();
+				
+				$result = $stmt->get_result();
+				while ($row = $result->fetch_assoc()) {
+					array_push($searchsquads, [$row['id'], $row['name'], $row['location']]);
+				}
+				$stmt->close();
 				
 				
 			}
@@ -404,13 +524,109 @@ function signOut() {
 			
 			$readonly = 'readonly';
 			if ($isLoggedIn) $readonly = '';
-			print "<link rel='stylesheet' type='text/css' href='styles.css'>";
+			
+			$js_wmcs = "";
+			$js_searchsquads = "";
+			
+			for($i = 0; $i < count($wmcs); $i++) {
+				if ($wmcs[$i][0]==-1) continue;
+				if (strlen($js_wmcs) > 0) $js_wmcs = $js_wmcs . ",";
+				$js_wmcs = $js_wmcs . "[" . $wmcs[$i][0] . ",'" . $wmcs[$i][1] . "','" . $wmcs[$i][2] . "']";
+			}
+			for($i = 0; $i < count($searchsquads); $i++) {
+				if ($searchsquads[$i][0]==-1) continue;
+				if (strlen($js_searchsquads) > 0) $js_searchsquads = $js_searchsquads . ",";
+				$js_searchsquads = $js_searchsquads . "[" . $searchsquads[$i][0] . ",'" . $searchsquads[$i][1] . "','" . $searchsquads[$i][2] . "']";
+			}
+				
+			print "<link rel='stylesheet' type='text/css' href='styles.css'>";			
+			print "<script> 
+			
+				function OnRowChanged(rowIndex) {
+					var maxRowIndex = 10;
+					if (rowIndex == maxRowIndex) return;
+					
+					var tb = document.getElementById('tblRelative');
+					var nrow = tb.getElementsByTagName('tr').length;					
+					
+					if (rowIndex + 2 == nrow) {
+						var row = tb.insertRow(rowIndex + 2);
+						var cell1 = row.insertCell(0);
+						var cell2 = row.insertCell(1);
+						var cell3 = row.insertCell(2);
+						
+						cell2.innerHTML = \"<input type='text' onchange='OnRowChanged(\" + (rowIndex + 1) + \");'>\";
+						cell3.innerHTML = \"<input type='text' onchange='OnRowChanged(\" + (rowIndex + 1) + \");'>\";
+					}
+				}
+				
+				function OnWMCChanged() {
+					var wmcs = [$js_wmcs];
+					
+					var wmcid = document.getElementById('selWMC').value;
+
+					var wmc_name = document.getElementById('wmc_name');
+					var wmc_addr = document.getElementById('wmc_address');	
+
+					wmc_name.value = '';
+					wmc_addr.value = '';
+						
+					if (wmcid == -1) {
+						wmc_name.readOnly = '';
+						wmc_addr.readOnly = '';
+					} else {
+						wmc_name.readOnly = 'readonly';
+						wmc_addr.readOnly = 'readonly';	
+
+						
+						for (i = 0; i < wmcs.length; i++) {
+							
+							if (wmcs[i][0] == wmcid) {								
+								wmc_name.value = wmcs[i][1];
+								wmc_addr.value = wmcs[i][2];
+								break;
+							}
+						}
+					}					
+				}
+				
+				function OnSearchSquadChanged() {
+					var searchsquads = [$js_searchsquads];
+					
+					var searchsquadid = document.getElementById('selSearchSquad').value;					
+							
+					ss_name = document.getElementById('searchsquad_name');
+					ss_addr = document.getElementById('searchsquad_address');	
+
+					ss_name.value = '';
+					ss_addr.value = '';
+					
+					if (searchsquadid == -1) {
+						ss_name.readOnly = '';
+						ss_addr.readOnly = '';
+					} else {
+						ss_name.readOnly = 'readonly';
+						ss_addr.readOnly = 'readonly';	
+
+						
+						for (i = 0; i < searchsquads.length; i++) {
+							if (searchsquads[i][0] == searchsquadid) {								
+								ss_name.value = searchsquads[i][1];
+								ss_addr.value = searchsquads[i][2];
+								break;
+							}
+						}
+					}		
+				}
+				
+				</script>";
+			
 			print "<center><form id='frmWarriorCard'> <table id='tblWarriorCard'>";
 			
 			
 			
 			print "<input id='warriorId' type='hidden' value='$warriorId' readonly>";
-			print "<tr> <td colspan=2> <p align='center'> Данные о бойце </p> </td> </tr>";	   
+			print "<tr> <td colspan=2> <div align='center' style='font-size:18px;'> Данные о бойце </div> </td> </tr>";	   
 			print "<tr>
 				   <td> <label for='first_name'>Фамилия:</label> </td>
 				   <td> <input id='first_name' type='text' value='$first_name' $readonly> </td>
@@ -435,12 +651,20 @@ function signOut() {
 				   <td> <label for='rank'>Звание:</label> </td> <td>";				   
 			if ($isLoggedIn) {
 				print "<select>";
-					print "<option selected> $rank </option>";
-					print "<option> One </option>";
-					print "<option> Two </option>";
+					print "<option";
+					if ($warriorId == -1) print " selected ";
+					print " disabled> --Выберите звание-- </option>";
+					for($i = 0; $i < count($ranks); $i += 1) {
+						print "<option value=$ranks[$i][0]";
+						if ((int)$ranks[$i][0] == $rankid) print " selected ";
+						print ">". $ranks[$i][1] ."</option>";
+					}
 				print "</select>";
 			} else {
-				print "<input id='rank' type='text' value='$rank' $readonly>";
+				for($i = 0; $i < count($ranks); $i++) {
+					if ($ranks[$i][0] == $rankid) 
+					print "<input id='rank' type='text' value='" . $ranks[$i][1] . "' readonly>";
+				}				
 			}			
 			print "</td></tr>";
 
@@ -453,38 +677,62 @@ function signOut() {
 			print "<tr>
 				   <td> <label for='wmc'>Каким РВК призван:</label> </td> <td>";				   
 			if ($isLoggedIn) {
-				print "<select>";
-					print "<option selected disabled> --Выберите РВК-- </option>";
-					print "<option> Новый РВК </option>";
-					print "<option> РВК1 </option>";
-					print "<option> РВК2 </option>";
+				print "<select id='selWMC' onchange='OnWMCChanged()'>";
+					print "<option";
+					if ($warriorId == -1) print " selected ";
+					print " disabled> --Выберите РВК-- </option>";
+					print "<option value=-1> Новый РВК </option>";
+					
+					for($i = 0; $i < count($wmcs); $i += 1) {
+						if ($wmcs[$i][0] == -1) continue;
+						
+						print "<option value=" . $wmcs[$i][0];
+						if ((int)$wmcs[$i][0] == $wmcid) print " selected ";
+						print "> " . $wmcs[$i][1] . ", " . $wmcs[$i][2] . "</option>";
+					}
+					
 				print "</select>";
 			} else {
-				print "<input id='wmc' type='text' value='$wmc' readonly>";
+				for($i = 0; $i < count($wmcs); $i++) {
+					if ($wmcs[$i][0] == $wmcid) 
+					print "<input id='wmc' type='text' value='" . $wmcs[$i][1] . ", " . $wmcs[$i][2] . "' readonly>";
+				}			
 			}			
 			print "</td></tr>";
 			
 			if ($isLoggedIn) {
-				print "<tr>
-					   <td> <label for='wmc_name'>Название РВК:</label> </td>
-					   <td> <input id='wmc_name' type='text' value='' $readonly> </td>
-					   </tr>";
-				print "<tr>
-					   <td> <label for='wmc_address'>Адрес РВК:</label> </td>
-					   <td> <input id='wmc_address' type='text' value='' $readonly> </td>
-					   </tr>";
+				for($i = 0; $i < count($wmcs); $i++) {
+					if ($wmcs[$i][0] == $wmcid) {
+						print "<tr>
+						   <td> <label for='wmc_name'>Название РВК:</label> </td>
+						   <td> <input id='wmc_name' type='text' value='" . $wmcs[$i][1] . "' readonly> </td>
+						   </tr>";
+						print "<tr>
+						   <td> <label for='wmc_address'>Адрес РВК:</label> </td>
+						   <td> <input id='wmc_address' type='text' value='" . $wmcs[$i][2] . "' readonly> </td>
+						   </tr>";
+					}					
+				}				
 			}
 			/* Война */
 			print "<tr class='first_tr'>
 				   <td> <label for='war'>Война:</label> </td> <td>";				   
 			if ($isLoggedIn) {
 				print "<select>";
-					print "<option selected> $war </option>";
-					print "<option> war1 </option>";
-					print "<option> war2 </option>";
+					print "<option";
+					if ($warriorId == -1) print " selected ";
+					print " disabled> --Выберите войну-- </option>";
+					for($i = 0; $i < count($wars); $i += 1) {
+						print "<option value=$wars[$i][0]";
+						if ((int)$wars[$i][0] == $warid) print " selected ";
+						print ">". $wars[$i][1] ."</option>";
+					}
 				print "</select>";
 			} else {
-				print "<input id='war' type='text' value='$war' readonly>";
+				for($i = 0; $i < count($wars); $i++) {
+					if ($wars[$i][0] == $warid) 
+					print "<input id='war' type='text' value='" . $wars[$i][1] . "' readonly>";
+				}
 			}			
 			print "</td></tr>";
 			   
@@ -493,40 +741,64 @@ function signOut() {
 				   <td> <label for='leavingreason'>Причина выбытия:</label> </td> <td>";				   
 			if ($isLoggedIn) {
 				print "<select>";
-					print "<option selected> $leavingreason </option>";
-					print "<option> war1 </option>";
-					print "<option> war2 </option>";
+					print "<option";
+					if ($warriorId == -1) print " selected ";
+					print " disabled> --Выберите причину-- </option>";
+					for($i = 0; $i < count($lrs); $i += 1) {
+						print "<option value=$lrs[$i][0]";
+						if ((int)$lrs[$i][0] == $lrid) print " selected ";
+						print ">". $lrs[$i][1] ."</option>";
+					}
+					
 				print "</select>";
 			} else {
-				print "<input id='leavingreason' type='text' value='$leavingreason' readonly>";
+				for($i = 0; $i < count($lrs); $i++) {
+					if ($lrs[$i][0] == $lrid) 
+					print "<input id='leavingreason' type='text' value='" . $lrs[$i][1] . "' readonly>";
+				}
 			}	
 			print "</td></tr>";
 			
 			print "<tr>
-				   <td> <label for='leavingreasondate'>Дата выбытия:</label> </td>
-				   <td> <input id='leavingreasondate' type='text' value='$leavingreasondate' $readonly> </td>
+				   <td> <label for='lrdate'>Дата выбытия:</label> </td>
+				   <td> <input id='lrdate' type='text' value='$lrdate' $readonly> </td>
 				   </tr>";
 			print "<tr>
-				   <td> <label for='leavingreasondescription'>Описание выбытия:</label> </td>
-				   <td> <input id='leavingreasondescription' type='text' value='$leavingreasondescription' $readonly> </td>
+				   <td> <label for='lrdesc'>Описание выбытия:</label> </td>
+				   <td> <input id='lrdesc' type='text' value='$lrdesc' $readonly> </td>
 				   </tr>";	   
 				   
 				
-			print "<tr> <td colspan=2> <p align='center'> Сведения о родственниках</p> </td> </tr>
+			print "<tr> <td colspan=2> <p align='center' style='font-size:18px;'> Сведения о родственниках</p> </td> </tr>
 				   
 				   <tr>
 				   <td colspan=2> 
 						<center>
-						<table id=tblRelative>
+						<table id='tblRelative'>
 						<tr> <th> ИД </th> <th> ФИО </th> <th> Адрес </th> </tr>";
-						
 					
-					//<tr> <td> RelativeName </td> <td> RelativeAddress </td> </tr>
+					for($i = 0; $i < count($relatives); $i++) {		
+						
+						$rel_id = $relatives[$i][0];
+						$rel_name = $relatives[$i][1];
+						$rel_addr = $relatives[$i][2];
+						
+						print "<tr> <td> $rel_id </td> <td>
+						<input class='inpRel' type='text' value='$rel_name' onchange='OnRowChanged($i)' $readonly> 
+						</td><td> 
+						<input type='text' value='$rel_addr' onchange='OnRowChanged($i)' $readonly> 
+						</td></tr>";
+									
+					}
+					
+					
 			if ($isLoggedIn) {
+				
+				$i = count($relatives);
 				print "<tr> 
 					<td> f </td>
-					<td> <input type='text'> </td> 
-					<td> <input type='text'> </td> 
+					<td> <input type='text' onchange='OnRowChanged($i);'> </td> 
+					<td> <input type='text' onchange='OnRowChanged($i);'> </td> 
 					</tr>";
 			}
 						
@@ -538,32 +810,51 @@ function signOut() {
 				   ";
 				   
 			   
-			print "<tr> <td colspan=2> <p align='center'> Поисковый отряд </p> </td> </tr>";	
+			print "<tr> <td colspan=2> <p align='center' style='font-size:18px;'> Поисковый отряд </p> </td> </tr>";	
 			print "<tr>
 				   <td> <label for='searchsquad'>Поисковый отряд/объединение:</label> </td> <td>";				   
 			if ($isLoggedIn) {
-				print "<select>";
-					print "<option selected disabled> --Выберите отряд-- </option>";
-					print "<option> Новый отряд </option>";
-					print "<option> Имя поискового отряда </option>";
+				print "<select id='selSearchSquad' onchange='OnSearchSquadChanged();'>";
+					print "<option";
+					if ($warriorId == -1) print " selected ";
+					print " disabled> --Выберите отряд/объединение-- </option>";
+					print "<option value=-1> Новый РВК </option>";
+					
+					for($i = 0; $i < count($searchsquads); $i += 1) {
+						if ($searchsquads[$i][0] == -1) continue;
+						
+						print "<option value=". $searchsquads[$i][0];
+						if ((int)$searchsquads[$i][0] == $searchsquadid) print " selected ";
+						print "> " . $searchsquads[$i][1] . ", " . $searchsquads[$i][2] . "</option>";
+					}
 				print "</select>";
 			} else {
-				print "<input id='searchsquad' type='text' value='$searchsquad' readonly>";
+				for($i = 0; $i < count($searchsquads); $i++) {
+					if ($searchsquads[$i][0] == $searchsquadid) 
+					print "<input id='wmc' type='text' value='" . $searchsquads[$i][1] . ", " . $searchsquads[$i][2] . "' readonly>";
+				}	
 			}			
 			print "</td></tr>";	
 			 
 			if ($isLoggedIn) {
-				print "<tr>
-					   <td> <label for='searchsquad_name'>Название:</label> </td>
-					   <td> <input id='searchsquad_name' type='text' value='' $readonly> </td>
-					   </tr>";
-				print "<tr>
-					   <td> <label for='searchsquad_address'>Адрес:</label> </td>
-					   <td> <input id='searchsquad_address' type='text' value='' $readonly> </td>
-					   </tr>";
+				for($i = 0; $i < count($searchsquads); $i++) {
+					if ($searchsquads[$i][0] == $searchsquadid) {
+						print "<tr>
+							   <td> <label for='searchsquad_name'>Название:</label> </td>
+							   <td> <input id='searchsquad_name' type='text' value='". $searchsquads[$i][1] ."' readonly> </td>
+							   </tr>";
+						print "<tr>
+							   <td> <label for='searchsquad_address'>Адрес:</label> </td>
+							   <td> <input id='searchsquad_address' type='text' value='". $searchsquads[$i][2] ."' readonly> </td>
+							   </tr>";
+					}					
+				}				
+			}
+			if ($isLoggedIn) {
+				
 			}
 			
-			print "<tr> <td colspan=2> <p align='center'> Сведения об обнаружении </p> </td> </tr>";			
+			print "<tr> <td colspan=2> <p align='center' style='font-size:18px;'> Сведения об обнаружении </p> </td> </tr>";			
 			print "<tr>
 				   <td> <label for='findingdate'>Дата:</label> </td>
 				   <td> <input id='findingdate' type='text' value='$findingdate' $readonly> </td>
@@ -585,7 +876,7 @@ function signOut() {
 				   </tr>";
 				   
 			//Сведения о захоронении
-			print "<tr> <td colspan=2> <p align='center'> Сведения о захоронении </p> </td> </tr>";
+			print "<tr> <td colspan=2> <p align='center' style='font-size:18px;'> Сведения о захоронении </p> </td> </tr>";
 			
 			print "<tr>
 				   <td> <label for='location'>Место:</label> </td>
@@ -593,8 +884,8 @@ function signOut() {
 				   </tr>";
 				   
 			print "<tr>
-				   <td> <label for='burial_date'>Дата:</label> </td>
-				   <td> <input id='burial_date' type='text' value='$burial_date' $readonly> </td>
+				   <td> <label for='burialdate'>Дата:</label> </td>
+				   <td> <input id='burialdate' type='text' value='$burialdate' $readonly> </td>
 				   </tr>";
 				   
 			print "<tr>
@@ -609,6 +900,7 @@ function signOut() {
 			if ($warriorId == -1) $btnName = 'Внести данные';
 			
 			if ($isLoggedIn) {
+				print "<br>";
 				print "<input type='button' value='$btnName'>";
 			}
 			
