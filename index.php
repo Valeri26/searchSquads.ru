@@ -231,6 +231,7 @@ function signOut() {
 	}
 	
 	function InsertOrChangeWarriorCard() {
+			
 			sParams = "";
 			
 			var pat1 =  /^([\d]{1,2})-([\d]{1,2})-([\d]{4})$/;
@@ -238,9 +239,12 @@ function signOut() {
 			var pat3 =  /^([\d]{4})$/;
 			
 			document.getElementById('errorMessage').innerHTML = '';
+			document.getElementById('infoMessage').innerHTML = '';
 			
-			var warriorId = document.getElementById('warriorId').value;
-			sParams = sParams + "wid=" + encodeURIComponent(fname);
+			var warriorId = document.getElementById('warriorId').value;	
+			sParams = sParams + "wid=" + encodeURIComponent(warriorId);
+			
+			
 			
 			// check first_name
 			var fname = document.getElementById('first_name').value.trim();	
@@ -267,7 +271,7 @@ function signOut() {
 			document.getElementById('third_name').value = tname;
 			
 			sParams = sParams + "&tname=" + encodeURIComponent(tname);
-			
+				
 			// check birth year
 			var bdate = document.getElementById('bdate').value.trim();	
 			if (bdate.length > 0) {
@@ -294,16 +298,17 @@ function signOut() {
 			// warriormilitarycommissariat			
 			var wmcid = document.getElementById('selWMC').value;
 			sParams = sParams + "&wmcid=" + encodeURIComponent(wmcid);
+		
 			
-			var wmc_name = document.getElementById('wmc_name').value;
+			var wmc_name = document.getElementById('wmc_name').value;			
 			sParams = sParams + "&wmc_name=" + encodeURIComponent(wmc_name);
 			
 			var wmc_addr = document.getElementById('wmc_address').value;
 			sParams = sParams + "&wmc_addr=" + encodeURIComponent(wmc_addr);
+			
 			// war
 			var warid = document.getElementById('war').value;
 			sParams = sParams + "&warid=" + encodeURIComponent(warid);
-			
 			
 			// leaving reason 
 			
@@ -346,6 +351,8 @@ function signOut() {
 				document.getElementById('errorMessage').innerHTML = "Введите дату выбытия в одном из следующих форматов: <br> 'ДД-ММ-ГГГГ','ММ-ГГГГ','ГГГГ'";
 				return;
 			}
+			
+		
 			
 			if (lryear < 1800 || lryear > 2000) {
 				document.getElementById('errorMessage').innerHTML = "Введите год выбытия в пределах от 1800 до 2000";
@@ -539,34 +546,38 @@ function signOut() {
 			var burialcommissariat = document.getElementById('burialcommissariat').value.trim();
 			sParams = sParams + "&burialcommissariat=" + encodeURIComponent(burialcommissariat);
 			
-			document.getElementById('errorMessage').innerHTML = "<p>" + sParams + "</p>";
+			
 			//return;
 			/// ajax
 			
-			// var url = "InsertOrChangeWarriorCard.php";
+			var url = "InsertOrChangeWarriorCard.php";
 			
-			// if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
-			// xmlHttp.open("GET", url+"?"+sParams, true);
-			// xmlHttp.onreadystatechange = handleWarriorInformationChangedOfInserted;
-			// xmlHttp.send(null);		
+			//document.getElementById('errorMessage').innerHTML = "<p>" + url+"?"+sParams + "</p>";
+			//return;
+			if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
+				xmlHttp.open("GET", url+"?"+sParams, true);
+				xmlHttp.onreadystatechange = handleWarriorInformationChangedOfInserted;
+				xmlHttp.send(null);	
+			}			
 	}
 	
-	// function handleWarriorInformationChangedOfInserted(){
-		// if (xmlHttp.readyState == 4)
-		// {
-			// if (xmlHttp.status == 200)
-			// {
-				// xmlResponse = xmlHttp.responseXML;	
-				// xmlRoot = xmlResponse.documentElement;
+	function handleWarriorInformationChangedOfInserted(){
+		if (xmlHttp.readyState == 4)
+		{
+			if (xmlHttp.status == 200)
+			{
+				//xmlResponse = xmlHttp.responseXML;	
+				//xmlRoot = xmlResponse.documentElement;
 				
-				// warriors = xmlRoot.getElementsByTagName("queryResult");
+				//warriors = xmlRoot.getElementsByTagName("queryResult");
 				
-				// htmlCode = "Запрос выполнен.";
+				htmlCode = "Запрос выполнен.";
 				
-				// document.getElementById('errorMessage').innerHTML = htmlCode;				
-			// }
-		// }
-	// }
+				document.getElementById('errorMessage').innerHTML = '';
+				document.getElementById('infoMessage').innerHTML = htmlCode;				
+			}
+		}
+	}
 	
 	
 	
@@ -782,7 +793,7 @@ function signOut() {
 				//
 				$query = "select
 				location, date_format(burialdate, '%d-%m-%Y') burialdate,
-				(select concat (name,',',location) from burialmilitarycommissariats where id=commissariat_id) as bmc
+				commissariatName as bmc
 				from burials where warrior_id = ?;";
 				
 				$stmt = $db->prepare($query);
@@ -1040,6 +1051,7 @@ function signOut() {
 			print "</td></tr>";
 			
 			if ($isLoggedIn) {
+				$fadded = false;
 				for($i = 0; $i < count($wmcs); $i++) {
 					if ($wmcs[$i][0] == $wmcid) {
 						print "<tr>
@@ -1050,8 +1062,21 @@ function signOut() {
 						   <td> <label for='wmc_address'>Адрес РВК:</label> </td>
 						   <td> <input id='wmc_address' type='text' value='" . $wmcs[$i][2] . "' readonly> </td>
 						   </tr>";
+						$fadded = true;
 					}					
-				}				
+				}
+
+				if (!$fadded) {
+						print "<tr>
+						   <td> <label for='wmc_name'>Название РВК:</label> </td>
+						   <td> <input id='wmc_name' type='text' value='' readonly> </td>
+						   </tr>";
+						print "<tr>
+						   <td> <label for='wmc_address'>Адрес РВК:</label> </td>
+						   <td> <input id='wmc_address' type='text' value='' readonly> </td>
+						   </tr>";
+				}
+				
 			}
 			/* Война */
 			print "<tr class='first_tr'>
@@ -1084,7 +1109,7 @@ function signOut() {
 					if ($warriorId == -1) print " selected ";
 					print " disabled value=0> --Выберите причину-- </option>";
 					for($i = 0; $i < count($lrs); $i += 1) {
-						print "<option value=$lrs[$i][0]";
+						print "<option value=" . $lrs[$i][0];
 						if ((int)$lrs[$i][0] == $lrid) print " selected ";
 						print ">". $lrs[$i][1] ."</option>";
 					}
@@ -1157,7 +1182,7 @@ function signOut() {
 					print "<option";
 					if ($warriorId == -1) print " selected ";
 					print " disabled value=0> --Выберите отряд/объединение-- </option>";
-					print "<option value=-1> Новый РВК </option>";
+					print "<option value=-1> Новый отряд/объединение </option>";
 					
 					for($i = 0; $i < count($searchsquads); $i += 1) {
 						if ($searchsquads[$i][0] == -1) continue;
@@ -1238,7 +1263,8 @@ function signOut() {
 			$btnName = 'Изменить данные';
 			if ($warriorId == -1) $btnName = 'Внести данные';
 			
-			print "<br> <div style='color: red;' id='errorMessage'> </div>";
+			print "<br> <div style='color: red;' id='errorMessage'> </div> <div style='color: green;' id='infoMessage'> </div>";
+			
 			
 			if ($isLoggedIn) {
 				print "<br>";
