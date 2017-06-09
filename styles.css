@@ -4,7 +4,7 @@
 	#mContent * {
 		
 		font-family:  sans-serif;
-		color: rgba(146,146,146,1.00);
+		color: rgba(100,100,100,1.00);
 		font-size: 14px;
 		font-style: normal;
 		font-weight: 400;	
@@ -93,10 +93,10 @@
 	}
 	#tblRelative td 
 	{
-		border: 1px solid black;
+		border: 1px solid rgba(100,100,100,1.00);
 	}
 	#tblRelative th {
-		border: 1px solid black;
+		border: 1px solid rgba(100,100,100,1.00);
 	}
 	
 	#tblRelative tr th:first-child {
@@ -107,6 +107,7 @@
 		width: 1px;
 		visibility: hidden;
 	}
+	
 	
 	
 	

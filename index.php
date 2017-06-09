@@ -230,6 +230,345 @@ function signOut() {
 		document.getElementById('dynForm').submit();		
 	}
 	
+	function InsertOrChangeWarriorCard() {
+			sParams = "";
+			
+			var pat1 =  /^([\d]{1,2})-([\d]{1,2})-([\d]{4})$/;
+			var pat2 =  /^([\d]{1,2})-([\d]{4})$/;
+			var pat3 =  /^([\d]{4})$/;
+			
+			document.getElementById('errorMessage').innerHTML = '';
+			
+			var warriorId = document.getElementById('warriorId').value;
+			sParams = sParams + "wid=" + encodeURIComponent(fname);
+			
+			// check first_name
+			var fname = document.getElementById('first_name').value.trim();	
+			document.getElementById('first_name').value = fname;
+			if (fname.length==0) 
+			{
+				document.getElementById('errorMessage').innerHTML = 'Введите фамилию бойца.';
+				return;
+			}
+			sParams = sParams + "&fname=" + encodeURIComponent(fname);
+			
+			// check second_name
+			var sname = document.getElementById('second_name').value.trim();	
+			document.getElementById('second_name').value = sname;
+			if (sname.length==0) 
+			{
+				document.getElementById('errorMessage').innerHTML = 'Введите имя бойца.';
+				return;
+			}	
+			sParams = sParams + "&sname=" + encodeURIComponent(sname);
+			
+			// third name
+			var tname = document.getElementById('third_name').value.trim();
+			document.getElementById('third_name').value = tname;
+			
+			sParams = sParams + "&tname=" + encodeURIComponent(tname);
+			
+			// check birth year
+			var bdate = document.getElementById('bdate').value.trim();	
+			if (bdate.length > 0) {
+				bdate = parseInt(bdate);
+				if (isNaN(bdate) || bdate < 1800 || bdate > 2100 ) 
+				{
+					document.getElementById('errorMessage').innerHTML = 'Неверно введен год рождения бойца.';
+					return;
+				}
+			} else {
+				bdate = 0;
+			}
+			sParams = sParams + "&bdate=" + encodeURIComponent(bdate);
+			
+			// rank_id
+			var rankid = document.getElementById('rank').value;
+			sParams = sParams + "&rankid=" + encodeURIComponent(rankid);
+			
+			// militaryUnit_name
+			var mun = document.getElementById('militaryUnit_name').value.trim();
+			document.getElementById('militaryUnit_name').value = mun;
+			sParams = sParams + "&mun=" + encodeURIComponent(mun);
+			
+			// warriormilitarycommissariat			
+			var wmcid = document.getElementById('selWMC').value;
+			sParams = sParams + "&wmcid=" + encodeURIComponent(wmcid);
+			
+			var wmc_name = document.getElementById('wmc_name').value;
+			sParams = sParams + "&wmc_name=" + encodeURIComponent(wmc_name);
+			
+			var wmc_addr = document.getElementById('wmc_address').value;
+			sParams = sParams + "&wmc_addr=" + encodeURIComponent(wmc_addr);
+			// war
+			var warid = document.getElementById('war').value;
+			sParams = sParams + "&warid=" + encodeURIComponent(warid);
+			
+			
+			// leaving reason 
+			
+			var lrid = document.getElementById('leavingreason').value;
+			if (lrid == 0) {
+				document.getElementById('errorMessage').innerHTML = 'Выберите причину выбытия.';
+				return;
+			}
+			sParams = sParams + "&lrid=" + encodeURIComponent(lrid);
+			
+			
+			var lrdate = document.getElementById('lrdate').value.trim();
+			var lrdateformat = 0;
+			
+			var lrday = 1;
+			var lrmonth = 1;
+			var lryear = 2000;
+		
+			if (lrdate.match(pat1)) {
+				lrdateformat = 3;
+				
+				match = pat1.exec(lrdate);				
+				lrday = parseInt(match[1]);
+				lrmonth = parseInt(match[2]);
+				lryear = parseInt(match[3]);				
+				
+			} else if (lrdate.match(pat2)) {
+				lrdateformat = 2;
+				match = pat2.exec(lrdate);				
+				
+				lrmonth = parseInt(match[1]);
+				lryear = parseInt(match[2]);
+			} else if (lrdate.match(pat3)) {
+				lrdateformat = 1;
+				
+				match = pat3.exec(lrdate);
+				
+				lryear = parseInt(match[1]);
+			} else {
+				document.getElementById('errorMessage').innerHTML = "Введите дату выбытия в одном из следующих форматов: <br> 'ДД-ММ-ГГГГ','ММ-ГГГГ','ГГГГ'";
+				return;
+			}
+			
+			if (lryear < 1800 || lryear > 2000) {
+				document.getElementById('errorMessage').innerHTML = "Введите год выбытия в пределах от 1800 до 2000";
+				return;
+			}
+			if (lrmonth < 1 || lrmonth > 12) {
+				document.getElementById('errorMessage').innerHTML = "Введите месяц выбытия в пределах от 1 до 12";
+				return;
+			}
+			if (lrday < 1 || lrday > new Date(lryear, lrmonth, 0).getDate()) {
+				document.getElementById('errorMessage').innerHTML = "День месяца выбытия введен некорректно";
+				return;
+			}
+			
+			sParams = sParams + "&lrdate=" + encodeURIComponent(lryear + "-" + lrmonth + "-" + lrday);
+			sParams = sParams + "&lrdateformat=" + encodeURIComponent(lrdateformat);
+			
+			
+			var lrdesc = document.getElementById('lrdesc').value.trim();
+			sParams = sParams + "&lrdesc=" + encodeURIComponent(lrdesc);
+			
+			
+			// Сведения о родственниках 
+			var relatives = [];
+			var tRelativeRows = document.getElementById('tblRelative').getElementsByTagName('tr');			
+			
+			for(var i = 1; i < tRelativeRows.length; i++) {
+				var tds = tRelativeRows.item(i).getElementsByTagName('td');
+				
+				var relid = tds[0].innerHTML;
+				
+				var inputs = tRelativeRows.item(i).getElementsByTagName('input');
+				
+				var relName = inputs[0].value.trim();
+				var relAddr = inputs[1].value.trim();
+				
+				if (relid == -1 && relName.length == 0 && relAddr.length == 0) continue;			
+				
+				var names = relName.split(" ");
+				
+				var relFName ="";
+				var relSName ="";
+				var relTName ="";
+				
+				if (names.length > 0) {
+					relFName = names[0];
+				}
+				
+				var idx = 1;
+				while (names.length > idx) {
+					if (names[idx].length > 0) {
+						relSName = names[idx];
+						idx = idx + 1;
+						break;
+					} else {
+						idx = idx + 1;
+					}
+				}	
+				
+				while (names.length > idx) {
+					relTName = relTName + " " + names[idx];
+					idx = idx + 1;
+				}
+				relTName = relTName.trim();		
+				
+				sParams = sParams + "&relid" + i + "=" + encodeURIComponent(relid);
+				sParams = sParams + "&relFName" + i + "=" + encodeURIComponent(relFName);
+				sParams = sParams + "&relSName" + i + "=" + encodeURIComponent(relSName);
+				sParams = sParams + "&relTName" + i + "=" + encodeURIComponent(relTName);
+				sParams = sParams + "&relAddr" + i + "=" + encodeURIComponent(relAddr);
+				//relatives.push([relid, relFName, relSName, relTName, relAddr]);				
+			}
+			
+			// поисковый отряд		
+			var ssid = document.getElementById('selSearchSquad').value;			
+			if (ssid == 0) {
+				document.getElementById('errorMessage').innerHTML = "Укажите поисковый отряд";
+				return;
+			}	
+			sParams = sParams + "&ssid=" + encodeURIComponent(ssid);			
+			
+			var ss_name = document.getElementById('searchsquad_name').value;
+			sParams = sParams + "&ss_name=" + encodeURIComponent(ss_name);
+			var ss_addr = document.getElementById('searchsquad_address').value;
+			sParams = sParams + "&ss_addr=" + encodeURIComponent(ss_addr);
+			
+			// Сведения об обнаружении
+			var findingdate = document.getElementById('findingdate').value.trim();
+			var findingdateformat = 0;
+			
+			var findingday = 1;
+			var findingmonth = 1;
+			var findingyear = 2000;
+		
+			if (findingdate.match(pat1)) {
+				findingdateformat = 3;
+				
+				match = pat1.exec(findingdate);				
+				findingday = parseInt(match[1]);
+				findingmonth = parseInt(match[2]);
+				findingyear = parseInt(match[3]);				
+				
+			} else if (findingdate.match(pat2)) {
+				findingdateformat = 2;
+				match = pat2.exec(findingdate);				
+				
+				findingmonth = parseInt(match[1]);
+				findingyear = parseInt(match[2]);
+			} else if (findingdate.match(pat3)) {
+				findingdateformat = 1;
+				
+				match = pat3.exec(findingdate);
+				
+				findingyear = parseInt(match[1]);
+			} else {
+				document.getElementById('errorMessage').innerHTML = "Введите дату обнаружения в одном из следующих форматов: <br> 'ДД-ММ-ГГГГ','ММ-ГГГГ','ГГГГ'";
+				return;
+			}
+			
+			if (findingyear < 1900 || findingyear > 2100) {
+				document.getElementById('errorMessage').innerHTML = "Введите год обнаружения в пределах от 1900 до 2100";
+				return;
+			}
+			if (findingmonth < 1 || findingmonth > 12) {
+				document.getElementById('errorMessage').innerHTML = "Введите месяц обнаружения в пределах от 1 до 12";
+				return;
+			}
+			if (findingday < 1 || findingday > new Date(findingyear, findingmonth, 0).getDate()) {
+				document.getElementById('errorMessage').innerHTML = "День месяца обнаружения введен некорректно";
+				return;
+			}
+			
+			sParams = sParams + "&findingdate=" + encodeURIComponent(findingyear + "-" + findingmonth + "-" + findingday);
+			sParams = sParams + "&findingdateformat=" + encodeURIComponent(findingdateformat);
+			
+			var findinglocation = document.getElementById('findinglocation').value.trim();
+			if (findinglocation.length < 5) {
+				document.getElementById('errorMessage').innerHTML = "Укажите место обнаружения";
+				return;
+			}
+			sParams = sParams + "&findinglocation=" + encodeURIComponent(findinglocation);
+			
+			var fldesc = document.getElementById('locationdescription').value.trim();
+			sParams = sParams + "&fldesc=" + encodeURIComponent(fldesc);
+			
+			var fdesc = document.getElementById('findingdescription').value.trim();
+			sParams = sParams + "&fdesc=" + encodeURIComponent(fdesc);
+			
+			// Сведения о захоронении
+			
+			var burialdate = document.getElementById('burialdate').value.trim();
+			
+			var burialday = 1;
+			var burialmonth = 1;
+			var burialyear = 2000;
+		
+			if (burialdate.match(pat1)) {
+				match = pat1.exec(burialdate);				
+				burialday = parseInt(match[1]);
+				burialmonth = parseInt(match[2]);
+				burialyear = parseInt(match[3]);				
+			}
+			else 
+			{
+				document.getElementById('errorMessage').innerHTML = "Введите дату захоронения в следующем формате: <br> 'ДД-ММ-ГГГГ'";
+				return;
+			}
+			
+			if (burialyear < 1900 || burialyear > 2100) {
+				document.getElementById('errorMessage').innerHTML = "Введите год захоронения в пределах от 1900 до 2100";
+				return;
+			}
+			if (burialmonth < 1 || burialmonth > 12) {
+				document.getElementById('errorMessage').innerHTML = "Введите месяц захоронения в пределах от 1 до 12";
+				return;
+			}
+			if (burialday < 1 || burialday > new Date(burialyear, burialmonth, 0).getDate()) {
+				document.getElementById('errorMessage').innerHTML = "День месяца захоронения введен некорректно";
+				return;
+			}
+			sParams = sParams + "&burialdate=" + encodeURIComponent(burialyear + "-" + burialmonth + "-" + burialday);
+			
+	
+			var buriallocation = document.getElementById('buriallocation').value.trim();
+			if (buriallocation.length < 5) {
+				document.getElementById('errorMessage').innerHTML = "Укажите место захоронения";
+				return;
+			}
+			sParams = sParams + "&buriallocation=" + encodeURIComponent(buriallocation);
+			
+			var burialcommissariat = document.getElementById('burialcommissariat').value.trim();
+			sParams = sParams + "&burialcommissariat=" + encodeURIComponent(burialcommissariat);
+			
+			document.getElementById('errorMessage').innerHTML = "<p>" + sParams + "</p>";
+			//return;
+			/// ajax
+			
+			// var url = "InsertOrChangeWarriorCard.php";
+			
+			// if (xmlHttp.readyState == 4 || xmlHttp.readyState == 0) {
+			// xmlHttp.open("GET", url+"?"+sParams, true);
+			// xmlHttp.onreadystatechange = handleWarriorInformationChangedOfInserted;
+			// xmlHttp.send(null);		
+	}
+	
+	// function handleWarriorInformationChangedOfInserted(){
+		// if (xmlHttp.readyState == 4)
+		// {
+			// if (xmlHttp.status == 200)
+			// {
+				// xmlResponse = xmlHttp.responseXML;	
+				// xmlRoot = xmlResponse.documentElement;
+				
+				// warriors = xmlRoot.getElementsByTagName("queryResult");
+				
+				// htmlCode = "Запрос выполнен.";
+				
+				// document.getElementById('errorMessage').innerHTML = htmlCode;				
+			// }
+		// }
+	// }
+	
+	
 	
 </script>
 
@@ -361,12 +700,12 @@ function signOut() {
 			$searchsquads = array([-1,"",""]);
 			
 			$findingdate = "";
-			$location = "";
+			$findinglocation = "";
 			$locationdescription = "";
 			$findingdescription = "";
-			$location = "";
+			$buriallocation = "";
 			$burialdate = "";
-			$commissariat_id = "";
+			$burialcommissariat = "";
 		
 			
 			
@@ -434,7 +773,7 @@ function signOut() {
 				
 				$searchsquadid = $row['searchsquad_id'];
 				$findingdate = $row['fdate'];
-				$location = $row['location'];
+				$findinglocation = $row['location'];
 				$locationdescription = $row['locationdescription'];
 				$findingdescription = $row['findingdescription'];
 				
@@ -452,10 +791,9 @@ function signOut() {
 				
 				$row = $stmt->get_result()->fetch_assoc();
 				
-				$location = $row['location'];
 				$burialdate = $row['burialdate'];
-				$location = $row['location'];
-				$commissariat_id = $row['bmc'];
+				$buriallocation = $row['location'];
+				$burialcommissariat = $row['bmc'];
 				
 				$stmt->close();
 				
@@ -555,6 +893,7 @@ function signOut() {
 						var cell2 = row.insertCell(1);
 						var cell3 = row.insertCell(2);
 						
+						cell1.innerHTML = \"-1\";
 						cell2.innerHTML = \"<input type='text' onchange='OnRowChanged(\" + (rowIndex + 1) + \");'>\";
 						cell3.innerHTML = \"<input type='text' onchange='OnRowChanged(\" + (rowIndex + 1) + \");'>\";
 					}
@@ -650,12 +989,12 @@ function signOut() {
 			print "<tr>
 				   <td> <label for='rank'>Звание:</label> </td> <td>";				   
 			if ($isLoggedIn) {
-				print "<select>";
+				print "<select id='rank'>";
 					print "<option";
 					if ($warriorId == -1) print " selected ";
-					print " disabled> --Выберите звание-- </option>";
+					print " value=0> --Выберите звание-- </option>";
 					for($i = 0; $i < count($ranks); $i += 1) {
-						print "<option value=$ranks[$i][0]";
+						print "<option value=" . $ranks[$i][0];
 						if ((int)$ranks[$i][0] == $rankid) print " selected ";
 						print ">". $ranks[$i][1] ."</option>";
 					}
@@ -680,7 +1019,7 @@ function signOut() {
 				print "<select id='selWMC' onchange='OnWMCChanged()'>";
 					print "<option";
 					if ($warriorId == -1) print " selected ";
-					print " disabled> --Выберите РВК-- </option>";
+					print " value=0> --Выберите РВК-- </option>";
 					print "<option value=-1> Новый РВК </option>";
 					
 					for($i = 0; $i < count($wmcs); $i += 1) {
@@ -718,12 +1057,12 @@ function signOut() {
 			print "<tr class='first_tr'>
 				   <td> <label for='war'>Война:</label> </td> <td>";				   
 			if ($isLoggedIn) {
-				print "<select>";
+				print "<select id='war'>";
 					print "<option";
 					if ($warriorId == -1) print " selected ";
-					print " disabled> --Выберите войну-- </option>";
+					print " value=0> --Выберите войну-- </option>";
 					for($i = 0; $i < count($wars); $i += 1) {
-						print "<option value=$wars[$i][0]";
+						print "<option value=" . $wars[$i][0];
 						if ((int)$wars[$i][0] == $warid) print " selected ";
 						print ">". $wars[$i][1] ."</option>";
 					}
@@ -740,10 +1079,10 @@ function signOut() {
 			print "<tr>
 				   <td> <label for='leavingreason'>Причина выбытия:</label> </td> <td>";				   
 			if ($isLoggedIn) {
-				print "<select>";
+				print "<select id='leavingreason'>";
 					print "<option";
 					if ($warriorId == -1) print " selected ";
-					print " disabled> --Выберите причину-- </option>";
+					print " disabled value=0> --Выберите причину-- </option>";
 					for($i = 0; $i < count($lrs); $i += 1) {
 						print "<option value=$lrs[$i][0]";
 						if ((int)$lrs[$i][0] == $lrid) print " selected ";
@@ -796,7 +1135,7 @@ function signOut() {
 				
 				$i = count($relatives);
 				print "<tr> 
-					<td> f </td>
+					<td> -1 </td>
 					<td> <input type='text' onchange='OnRowChanged($i);'> </td> 
 					<td> <input type='text' onchange='OnRowChanged($i);'> </td> 
 					</tr>";
@@ -817,7 +1156,7 @@ function signOut() {
 				print "<select id='selSearchSquad' onchange='OnSearchSquadChanged();'>";
 					print "<option";
 					if ($warriorId == -1) print " selected ";
-					print " disabled> --Выберите отряд/объединение-- </option>";
+					print " disabled value=0> --Выберите отряд/объединение-- </option>";
 					print "<option value=-1> Новый РВК </option>";
 					
 					for($i = 0; $i < count($searchsquads); $i += 1) {
@@ -861,8 +1200,8 @@ function signOut() {
 				   </tr>";
 				   
 			print "<tr>
-				   <td> <label for='location'>Место:</label> </td>
-				   <td> <input id='location' type='text' value='$location' $readonly> </td>
+				   <td> <label for='findinglocation'>Место:</label> </td>
+				   <td> <input id='findinglocation' type='text' value='$findinglocation' $readonly> </td>
 				   </tr>";
 				   
 			print "<tr>
@@ -879,8 +1218,8 @@ function signOut() {
 			print "<tr> <td colspan=2> <p align='center' style='font-size:18px;'> Сведения о захоронении </p> </td> </tr>";
 			
 			print "<tr>
-				   <td> <label for='location'>Место:</label> </td>
-				   <td> <input id='location' type='text' value='$location' $readonly> </td>
+				   <td> <label for='buriallocation'>Место:</label> </td>
+				   <td> <input id='buriallocation' type='text' value='$buriallocation' $readonly> </td>
 				   </tr>";
 				   
 			print "<tr>
@@ -889,8 +1228,8 @@ function signOut() {
 				   </tr>";
 				   
 			print "<tr>
-				   <td> <label for='commissariat_id'>Наименование военкомата:</label> </td>
-				   <td> <input id='commissariat_id' type='text' value='$commissariat_id' $readonly> </td>
+				   <td> <label for='burialcommissariat'>Наименование военкомата:</label> </td>
+				   <td> <input id='burialcommissariat' type='text' value='$burialcommissariat' $readonly> </td>
 				   </tr>";
 			
 			
@@ -899,9 +1238,11 @@ function signOut() {
 			$btnName = 'Изменить данные';
 			if ($warriorId == -1) $btnName = 'Внести данные';
 			
+			print "<br> <div style='color: red;' id='errorMessage'> </div>";
+			
 			if ($isLoggedIn) {
 				print "<br>";
-				print "<input type='button' value='$btnName'>";
+				print "<input type='button' value='$btnName' onclick='InsertOrChangeWarriorCard();'>";
 			}
 			
 			print "<br><br>";
